@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, session
 from flask_limiter import Limiter
+from flask_cors import CORS
 from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
@@ -11,6 +12,8 @@ import os
 load_dotenv()
 
 app= Flask(__name__)
+
+CORS(app, origins=['https://tnoshin.githu.io'], supports_credentials=True)
 
 def get_real_ip():
     forwarded = request.headers.get('X-Forwarded-For')
@@ -34,7 +37,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 
 app.config['SESSION_COOKIE_HTTPONLY']=True
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('RENDER') is not None
-app.config['SESSION_COOKIE_SAMESITE']='Lax'
+app.config['SESSION_COOKIE_SAMESITE']='None'
 
 
 db = SQLAlchemy(app)
