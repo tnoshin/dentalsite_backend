@@ -54,7 +54,7 @@ with app.app_context():
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 model = genai.GenerativeModel('gemini-3.1-flash-lite')
 
-system_prompt = """ You are a helpful assistant for Brightsmile Dental Clinic.
+system_prompt = """ YOU ALWAYS RESPOND WITHIN 300 TOKENS. You are a helpful assistant for Brightsmile Dental Clinic.
     Clinic information:
     - Name: BrightSmile Dental
     - hours: Monday-Friday 9 AM-5PM, Saturday 10AM-2PM
