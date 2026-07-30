@@ -13,7 +13,7 @@ load_dotenv()
 
 app= Flask(__name__)
 
-CORS(app, origins=['https://tnoshin.githu.io'], supports_credentials=True)
+CORS(app, origins=['https://tnoshin.github.io'], supports_credentials=True)
 
 def get_real_ip():
     forwarded = request.headers.get('X-Forwarded-For')
