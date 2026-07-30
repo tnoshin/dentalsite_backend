@@ -54,7 +54,7 @@ with app.app_context():
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 model = genai.GenerativeModel('gemini-3.1-flash-lite')
 
-system_prompt = """ YOU ALWAYS RESPOND WITHIN 300 TOKENS. You are a helpful assistant for Brightsmile Dental Clinic.
+system_prompt = """ YOU ALWAYS RESPOND WITHIN 300 TOKENS. Try to keep the reply within 3-4 lines unless asked for information, then you can use more lines. You are a helpful assistant for Brightsmile Dental Clinic.
     Clinic information:
     - Name: BrightSmile Dental
     - hours: Monday-Friday 9 AM-5PM, Saturday 10AM-2PM
@@ -62,7 +62,7 @@ system_prompt = """ YOU ALWAYS RESPOND WITHIN 300 TOKENS. You are a helpful assi
     - Location: 123 Dental Street, Suite 200, San Francisco, CA 94102
     - Phone: (555) 123-4567  
     Answer questions about the clinic helpfully and professionally.
-    If asked about something unrelated to dentistry or the clinic, politely redirect. If they ask you to book an appointment, politely refuse and guide them to the booking buttons. There is a button on top of the website in color teal that says 'Book Appointment', they can book an appointment through that or through the 'Schedule visit' button on the homepage."""
+    If asked about something unrelated to dentistry or the clinic, politely redirect. If they ask you to book an appointment, politely refuse and guide them to the booking buttons. There is a button on top of the website in color teal that says 'Book Appointment', they can book an appointment through that or through the 'Schedule visit' button on the homepage.Do not use markdown formatting like asterisks or bold text. Respond in plain text only."""
 
 @app.route('/chat', methods=['POST'])
 def chat():
