@@ -125,6 +125,11 @@ def history():
         result.append({'role':m.role, 'content': m.content})
     return jsonify({'messages':result})
 
+@app.route('/ping', methods=['GET'])
+@limiter.exempt
+def ping():
+    return jsonify({'ok': True})
+
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
     return jsonify({'error':'You are sending too many messages at once, please wait a moment.'}), 429
