@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, redirect, url_for, render_template
 from flask_limiter import Limiter
 from flask_cors import CORS
 from flask_limiter.util import get_remote_address
@@ -125,6 +125,31 @@ def history():
     for m in messages:
         result.append({'role':m.role, 'content': m.content})
     return jsonify({'messages':result})
+
+#for premium service admin panel
+@app.route('/admin/login', methods=['GET', 'POST'])
+@limiter.limit('5 per minute')
+def admin_login():
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        if password == os.getenv('ADMIN_PASSWORD'):
+            session['is_admin']= True
+            return redirect(url_for('admin_chats'))
+        else:
+            return render_template('admin_login.html', error='Incorrect password')
+    return render_template('admin_login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('is_admin', None)
+    return redirect(url_for('admin_login'))
+
+@app.route('/admin/chats')
+def admin_chats():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+    return 'Admin panel- chats will show here soon.'
+#admin panel block
 
 @app.route('/ping', methods=['GET'])
 @limiter.exempt
