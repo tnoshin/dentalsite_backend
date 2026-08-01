@@ -51,8 +51,7 @@ class message(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 with app.app_context():
-    db.drop_all()   # deletes all tables
-    db.create_all() # recreates with current model
+    db.create_all() 
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
 
@@ -113,9 +112,9 @@ def chat():
         print(f'Gemini API error: {error}')
         return jsonify({'error':'Something went wrong. Please try again.'}), 500
 
-    db.session.add(message(session_id=session_id, role='assistant', content=reply.text))
+    db.session.add(message(session_id=session_id, role='assistant', content=reply))
     db.session.commit()
-    return jsonify({'response':reply.text})
+    return jsonify({'response':reply})
 
 
 @app.route('/history', methods=['GET'])
