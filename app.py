@@ -105,7 +105,7 @@ def chat():
 
     current_time = datetime.now(BUSINESS_TIMEZONE).strftime('%A, %B %d, %Y at %I:%M %p %Z')
 
-    full_msg = system_prompt + + f'\n\nCurrent date and time (clinic local time): {current_time}' + '\n\nConversation so far: ' + conversation_context + '\n\nUser: ' + user_message
+    full_msg = system_prompt + f'\n\nCurrent date and time (clinic local time): {current_time}' + '\n\nConversation so far: ' + conversation_context + '\n\nUser: ' + user_message
     response = client.models.generate_content(model= 'gemini-3.1-flash-lite', contents= full_msg )
 
 
