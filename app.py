@@ -54,7 +54,7 @@ with app.app_context():
     db.drop_all()   # deletes all tables
     db.create_all() # recreates with current model
 
-client = genai.client(api_key=os.getenv('GEMINI_API_KEY'))
+client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
 
 system_prompt = """ YOU ALWAYS RESPOND WITHIN 300 TOKENS. Try to keep the reply within 3-4 lines unless asked for information, then you can use more lines. You are a helpful assistant for BrightSmile Dental Clinic.
 Clinic information:
