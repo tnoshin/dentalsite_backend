@@ -3,9 +3,9 @@ from flask_limiter import Limiter
 from flask_cors import CORS
 from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
-from datetime import datetime
+from datetime import datetime, timezone
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 import os
@@ -48,14 +48,13 @@ class message(db.Model):
     session_id = db.Column(db.String(50))
     role = db.Column(db.String(10))
     content = db.Column(db.Text)
-    created_at = db.Column(db.Datetime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
 with app.app_context():
     db.drop_all()   # deletes all tables
     db.create_all() # recreates with current model
 
-genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-model = genai.GenerativeModel('gemini-3.1-flash-lite')
+client = genai.client(api_key=os.getenv('GEMINI_API_KEY'))
 
 system_prompt = """ YOU ALWAYS RESPOND WITHIN 300 TOKENS. Try to keep the reply within 3-4 lines unless asked for information, then you can use more lines. You are a helpful assistant for BrightSmile Dental Clinic.
 Clinic information:
@@ -103,11 +102,13 @@ def chat():
             conversation_context += f'\nAssistant: {m.content}'
 
     full_msg = system_prompt + '\n\nConversation so far: ' + conversation_context + '\n\nUser: ' + user_message
+    response = client.models.generate_content(model= 'gemini-3.1-flash-lite', contents= full_msg )
+
 
     try:
-        reply = model.generate_content(full_msg)
-        if not reply.text:
+        if not response.text:
             return jsonify({'error': 'No response generated, please rephrase'}), 500
+        reply = response.text
     except Exception as error:
         print(f'Gemini API error: {error}')
         return jsonify({'error':'Something went wrong. Please try again.'}), 500
