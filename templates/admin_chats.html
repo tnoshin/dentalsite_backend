@@ -65,24 +65,25 @@
     {% if sessions %}
     <table>
         <thead>
-            <tr>
-                <th>Session ID</th>
-                <th>Messages</th>
-                <th>First message preview</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for s in sessions %}
-            <tr>
-                <td>{{ s.first_time.strftime('%b %d, %I:%M %p') }}</td>
-                <td>{{ s.session_id }}</td>
-                <td>{{ s.msg_count }}</td>
-                <td>{{ s.preview }}</td>
-                <td><a href="{{ url_for('admin_conversation', session_id=s.session_id) }}" class="session-link">View →</a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
+    <tr>
+        <th>Time</th>
+        <th>Chat ID</th>
+        <th>Messages</th>
+        <th>First message preview</th>
+        <th>Actions</th>
+    </tr>
+</thead>
+<tbody>
+    {% for s in sessions %}
+    <tr>
+        <td>{{ s.first_time.strftime('%b %d, %I:%M %p') if s.first_time else 'Unknown' }}</td>
+        <td>#{{ s.session_id[:8] }}</td>
+        <td>{{ s.msg_count }}</td>
+        <td>{{ s.preview }}</td>
+        <td><a href="{{ url_for('admin_conversation', session_id=s.session_id) }}" class="session-link">View →</a></td>
+    </tr>
+    {% endfor %}
+</tbody>
     </table>
     {% else %}
     <div class="empty">No conversations yet.</div>

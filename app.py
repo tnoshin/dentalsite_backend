@@ -3,7 +3,8 @@ from flask_limiter import Limiter
 from flask_cors import CORS
 from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
-from datetime import datetime, timezone
+from datetime import datetime, timezone 
+from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from google import genai
 from flask_sqlalchemy import SQLAlchemy
@@ -100,7 +101,11 @@ def chat():
         else:
             conversation_context += f'\nAssistant: {m.content}'
 
-    full_msg = system_prompt + '\n\nConversation so far: ' + conversation_context + '\n\nUser: ' + user_message
+    BUSINESS_TIMEZONE = ZoneInfo('America/San_Francisco')
+
+    current_time = datetime.now(BUSINESS_TIMEZONE).strftime('%A, %B %d, %Y at %I:%M %p %Z')
+
+    full_msg = system_prompt + + f'\n\nCurrent date and time (clinic local time): {current_time}' + '\n\nConversation so far: ' + conversation_context + '\n\nUser: ' + user_message
     response = client.models.generate_content(model= 'gemini-3.1-flash-lite', contents= full_msg )
 
 
