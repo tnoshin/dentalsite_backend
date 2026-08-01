@@ -51,7 +51,8 @@ class message(db.Model):
     created_at = db.Column(db.Datetime, default=datetime.utcnow)
 
 with app.app_context():
-    db.create_all()
+    db.drop_all()   # deletes all tables
+    db.create_all() # recreates with current model
 
 genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 model = genai.GenerativeModel('gemini-3.1-flash-lite')
@@ -165,10 +166,10 @@ def admin_chats():
         message.session_id,
         func.count(message.id).label('msg_count'),
         func.max(message.id).label('last_id')
-    ). group_by(message.session_id).order_by(func.max(message.id).desc()).all()
+    ). group_by(message.session_id).order_by(func.max(message.created_at).desc()).all()
 
     sessions_list = []
-    for session_id, msg_count, last_id in sessions_data:
+    for session_id, msg_count, last_time, first_time in sessions_data:
         first_msg = message.query.filter_by(
             session_id = session_id,
             role='user'
@@ -179,13 +180,12 @@ def admin_chats():
         sessions_list.append({
             'session_id': session_id,
             'msg_count': msg_count,
-            'preview':preview
+            'preview':preview,
+            'first_time':first_time,
+            'last_time':last_time
         })
     return render_template('admin_chats.html', sessions=sessions_list)
 
-
-
-    
 #admin panel block
 
 @app.route('/ping', methods=['GET'])
