@@ -3,6 +3,7 @@ from flask_limiter import Limiter
 from flask_cors import CORS
 from flask_limiter.util import get_remote_address
 from werkzeug.middleware.proxy_fix import ProxyFix
+from datetime import datetime
 from dotenv import load_dotenv
 import google.generativeai as genai
 from flask_sqlalchemy import SQLAlchemy
@@ -47,6 +48,7 @@ class message(db.Model):
     session_id = db.Column(db.String(50))
     role = db.Column(db.String(10))
     content = db.Column(db.Text)
+    created_at = db.Column(db.Datetime, default=datetime.utcnow)
 
 with app.app_context():
     db.create_all()
@@ -127,6 +129,16 @@ def history():
     return jsonify({'messages':result})
 
 #for premium service admin panel
+
+@app.route('/admin/chat/<session_id>')
+def admin_conversation(session_id):
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+
+    messages = message.query.filter_by(session_id=session_id).order_by(message.id).all()
+
+    return render_template('admin_conversation.html', messages=messages, session_i=session_id)
+
 @app.route('/admin/login', methods=['GET', 'POST'])
 @limiter.limit('5 per minute')
 def admin_login():
@@ -148,7 +160,32 @@ def admin_logout():
 def admin_chats():
     if not session.get('is_admin'):
         return redirect(url_for('admin_login'))
-    return 'Admin panel- chats will show here soon.'
+    from sqlalchemy import func
+    sessions_data = db.session.query(
+        message.session_id,
+        func.count(message.id).label('msg_count'),
+        func.max(message.id).label('last_id')
+    ). group_by(message.session_id).order_by(func.max(message.id).desc()).all()
+
+    sessions_list = []
+    for session_id, msg_count, last_id in sessions_data:
+        first_msg = message.query.filter_by(
+            session_id = session_id,
+            role='user'
+        ).order_by(message.id).first()
+
+        preview = first_msg.content[:100] if first_msg else '(no message)'
+
+        sessions_list.append({
+            'session_id': session_id,
+            'msg_count': msg_count,
+            'preview':preview
+        })
+    return render_template('admin_chats.html', sessions=sessions_list)
+
+
+
+    
 #admin panel block
 
 @app.route('/ping', methods=['GET'])

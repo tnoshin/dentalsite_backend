@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Conversation — {{ session_id }}</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f4f4f4;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .back {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+        .conversation {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .msg {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+        .msg.user {
+            background: #e8f0fe;
+            margin-right: 60px;
+        }
+        .msg.assistant {
+            background: #f4f4f4;
+            margin-left: 60px;
+        }
+        .role {
+            font-size: 12px;
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .content {
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('admin_chats') }}" class="back">← Back to all chats</a>
+    </div>
+    
+    <h2>Session {{ session_id }}</h2>
+    
+    <div class="conversation">
+        {% for m in messages %}
+        <div class="msg {{ m.role }}">
+            <div class="role">{{ m.role }}</div>
+            <div class="content">{{ m.content }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin — All Chats</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f4f4f4;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .logout {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #2c5aa0;
+            color: white;
+            font-weight: normal;
+        }
+        tr:hover {
+            background: #f9f9f9;
+        }
+        a.session-link {
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+        a.session-link:hover {
+            text-decoration: underline;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>All Conversations</h1>
+        <a href="{{ url_for('admin_logout') }}" class="logout">Logout</a>
+    </div>
+    
+    {% if sessions %}
+    <table>
+        <thead>
+            <tr>
+                <th>Session ID</th>
+                <th>Messages</th>
+                <th>First message preview</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in sessions %}
+            <tr>
+                <td>{{ s.first_time.strftime('%b %d, %I:%M %p') }}</td>
+                <td>{{ s.session_id }}</td>
+                <td>{{ s.msg_count }}</td>
+                <td>{{ s.preview }}</td>
+                <td><a href="{{ url_for('admin_conversation', session_id=s.session_id) }}" class="session-link">View →</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty">No conversations yet.</div>
+    {% endif %}
+</body>
+</html>
