@@ -165,9 +165,9 @@ def admin_chats():
     sessions_data = db.session.query(
         message.session_id,
         func.count(message.id).label('msg_count'),
-        func.max(message.id).label('last_id')
-    ). group_by(message.session_id).order_by(func.max(message.created_at).desc()).all()
-
+        func.max(message.created_at).label('last_time'),
+        func.min(message.created_at).label('first_time')
+    ).group_by(message.session_id).order_by(func.max(message.created_at).desc()).all()
     sessions_list = []
     for session_id, msg_count, last_time, first_time in sessions_data:
         first_msg = message.query.filter_by(
