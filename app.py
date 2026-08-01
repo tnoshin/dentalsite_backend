@@ -101,7 +101,7 @@ def chat():
         else:
             conversation_context += f'\nAssistant: {m.content}'
 
-    BUSINESS_TIMEZONE = ZoneInfo('America/San_Francisco')
+    BUSINESS_TIMEZONE = ZoneInfo('America/Los_Angeles')
 
     current_time = datetime.now(BUSINESS_TIMEZONE).strftime('%A, %B %d, %Y at %I:%M %p %Z')
 
