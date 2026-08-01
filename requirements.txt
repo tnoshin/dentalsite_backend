@@ -1,7 +1,7 @@
 gunicorn
 Flask
 Flask-SQLAlchemy
-google-generativeai
+google-genai
 python-dotenv
 psycopg2-binary
 Flask-Limiter==4.1.1
