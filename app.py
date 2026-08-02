@@ -16,7 +16,10 @@ app= Flask(__name__)
 
 csrf = CSRFProtect(app)
 
-CORS(app, origins=['https://tnoshin.github.io'], supports_credentials=True)
+CORS(app, resources={
+    r"/chat": {"origins": ["https://tnoshin.github.io"], "supports_credentials": True},
+    r"/history": {"origins": ["https://tnoshin.github.io"], "supports_credentials": True}
+})
 
 def get_real_ip():
     forwarded = request.headers.get('X-Forwarded-For')
