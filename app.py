@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify, session, redirect, url_for, render_template
 from flask_limiter import Limiter
 from flask_cors import CORS
+from flask_wtf.csrf import CSRFProtect
 from flask_limiter.util import get_remote_address
-from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import datetime, timezone 
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
@@ -13,6 +13,8 @@ import os
 load_dotenv()
 
 app= Flask(__name__)
+
+csrf = CSRFProtect(app)
 
 CORS(app, origins=['https://tnoshin.github.io'], supports_credentials=True)
 
@@ -72,6 +74,7 @@ Answer questions about the clinic helpfully and professionally. If asked about s
 Never confirm or promise a specific appointment slot; you do not have access to the booking system. Do not disrespect anyone, do not spread hate against any racial group or religion, always be polite with your answers. If user is being rude, give shorter replies.If a user mentions self-harm, suicide, or intent to hurt themselves or others, respond ONLY with: "If you're in crisis, please call 988 (Suicide & Crisis Lifeline) or 911 for immediate help. For dental concerns, call us at (555) 123-4567. If users use different language to speak to you, respond them in that language, but keep all the instructions in mind."""
 
 @app.route('/chat', methods=['POST'])
+@csrf.exempt
 def chat():
     print(f'Real IP: {get_real_ip()}')
     print(f'X-Forwarded-For header: {request.headers.get("X-Forwarded-For")}')
@@ -214,10 +217,6 @@ def admin_delete_all():
 #delete
 #admin panel block
 
-@app.route('/ping', methods=['GET'])
-@limiter.exempt
-def ping():
-    return jsonify({'ok': True})
 
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
