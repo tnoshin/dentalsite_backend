@@ -201,7 +201,9 @@ def admin_delete_conversation(session_id):
     return redirect(url_for('admin_chats'))
 
 @app.route('/admin/delete_all', methods=['POST'])
+@limiter.limit('1 per hour')
 def admin_delete_all():
+    print(f"[ADMIN DELETE ALL] Triggered at {datetime.now()} from IP {get_real_ip()}")
     if not session.get('is_admin'):
         return redirect(url_for('admin_login'))
 
@@ -209,6 +211,7 @@ def admin_delete_all():
     db.session.commit()
 
     return redirect(url_for('admin_chats'))
+#delete
 #admin panel block
 
 @app.route('/ping', methods=['GET'])
