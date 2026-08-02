@@ -66,5 +66,11 @@
         </div>
         {% endfor %}
     </div>
+    <form action="{{ url_for('admin_delete_conversation', session_id=session_id) }}" method="POST"
+      onsubmit="return confirm('Delete this conversation permanently? This cannot be undone.');">
+    <button type="submit" style="background: #d9534f; color: white; padding: 8px 16px; border: none; cursor: pointer;">
+        Delete this conversation
+    </button>
+</form>
 </body>
 </html>

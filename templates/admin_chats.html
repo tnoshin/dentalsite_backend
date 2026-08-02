@@ -85,6 +85,12 @@
     {% endfor %}
 </tbody>
     </table>
+    <form action="{{ url_for('admin_delete_all') }}" method="POST"
+      onsubmit="return prompt('Type DELETE to confirm removing ALL conversations:') === 'DELETE';">
+    <button type="submit" style="background: #d9534f; color: white; padding: 8px 16px; border: none; cursor: pointer;">
+        Delete ALL conversations
+    </button>
+    </form>
     {% else %}
     <div class="empty">No conversations yet.</div>
     {% endif %}

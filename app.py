@@ -105,10 +105,11 @@ def chat():
     current_time = datetime.now(BUSINESS_TIMEZONE).strftime('%A, %B %d, %Y at %I:%M %p %Z')
 
     full_msg = system_prompt + f'\n\nCurrent date and time (clinic local time): {current_time}' + '\n\nConversation so far: ' + conversation_context + '\n\nUser: ' + user_message
-    response = client.models.generate_content(model= 'gemini-3.1-flash-lite', contents= full_msg )
+    
 
 
     try:
+        response = client.models.generate_content(model= 'gemini-3.1-flash-lite', contents= full_msg )
         if not response.text:
             return jsonify({'error': 'No response generated, please rephrase'}), 500
         reply = response.text
@@ -142,7 +143,7 @@ def admin_conversation(session_id):
 
     messages = message.query.filter_by(session_id=session_id).order_by(message.id).all()
 
-    return render_template('admin_conversation.html', messages=messages, session_i=session_id)
+    return render_template('admin_conversation.html', messages=messages, session_id=session_id)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 @limiter.limit('5 per minute')
@@ -189,7 +190,25 @@ def admin_chats():
             'last_time':last_time
         })
     return render_template('admin_chats.html', sessions=sessions_list)
+#delete option
+@app.route('/admin/delete/<session_id>', methods=['POST'])
+def admin_delete_conversation(session_id):
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
 
+    message.query.filter_by(session_id=session_id).delete()
+    db.session.commit()
+    return redirect(url_for('admin_chats'))
+
+@app.route('/admin/delete_all', methods=['POST'])
+def admin_delete_all():
+    if not session.get('is_admin'):
+        return redirect(url_for('admin_login'))
+
+    message.query.delete()
+    db.session.commit()
+
+    return redirect(url_for('admin_chats'))
 #admin panel block
 
 @app.route('/ping', methods=['GET'])
