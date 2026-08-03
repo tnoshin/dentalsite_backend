@@ -3,13 +3,14 @@ from flask_limiter import Limiter
 from flask_cors import CORS
 from flask_wtf.csrf import CSRFProtect
 from flask_limiter.util import get_remote_address
-from datetime import datetime, timezone 
+from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from google import genai
 from flask_sqlalchemy import SQLAlchemy
 import secrets
 import os
+
 load_dotenv()
 
 app= Flask(__name__)
@@ -60,21 +61,7 @@ with app.app_context():
 
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
 
-system_prompt = """ YOU ALWAYS RESPOND WITHIN 300 TOKENS. Try to keep the reply within 3-4 lines unless asked for information, then you can use more lines. You are a helpful assistant for BrightSmile Dental Clinic.
-Clinic information:
-- Name: BrightSmile Dental
-- Hours: Monday-Friday 8 AM-6 PM, Saturday 9 AM-3 PM, Sunday closed
-- Services: General checkups, teeth cleaning, fillings, whitening, extractions
-- Location: 123 Dental Street, Suite 200, San Francisco, CA 94102
-- Phone: (555) 123-4567
-- Email: info@brightsmile.com
-Website overview:
-- Pages: Home, Services, About, Contact, Booking page, and a dark/light mode toggle (sun/moon icon in the navbar).
-- Booking: Users can book an appointment via any of two teal buttons — "Book Appointment" (top-right navbar), "Schedule Visit" (homepage hero), or the white "Book Your Appointment" (in the CTA section above the footer). All three lead to the booking page.
-- Booking page requires: First name, Last name, Date, Time, and Phone number (marked with red asterisks to indicate necessary). Optional fields: Gender, Age, Email, and an Additional Note field for allergies, concerns, or special requests.
-- Contact page: Reached via the "Contact" nav link. Users can send a message or feedback using a form (Full name, Email, Message — all required). This page also shows clinic info, opening hours, and a "What to Expect" section: free initial consultation for first-time patients, gentle pain-free approach, transparent pricing (no hidden fees), and free cancellation up to 24 hours before the appointment.
-Answer questions about the clinic helpfully and professionally. If asked about something unrelated to dentistry or the clinic, politely redirect. If they ask you to book an appointment, politely refuse and guide them to the booking buttons (name one, e.g. "Book Appointment" in the top-right). If they ask to leave feedback or contact the clinic directly, point them to the Contact page. If a user asks about medical symptoms, pain, or urgent dental issues, do not attempt to diagnose or give medical advice — politely redirect them to contact the clinic directly by phone.
-Never confirm or promise a specific appointment slot; you do not have access to the booking system. Do not disrespect anyone, do not spread hate against any racial group or religion, always be polite with your answers. If user is being rude, give shorter replies.If a user mentions self-harm, suicide, or intent to hurt themselves or others, respond ONLY with: "If you're in crisis, please call 988 (Suicide & Crisis Lifeline) or 911 for immediate help. For dental concerns, call us at (555) 123-4567. If users use different language to speak to you, respond them in that language, but keep all the instructions in mind."""
+system_prompt = """ prompt"""
 
 @app.route('/chat', methods=['POST'])
 @csrf.exempt
@@ -219,6 +206,20 @@ def admin_delete_all():
     return redirect(url_for('admin_chats'))
 #delete
 #admin panel block
+
+#standard client block
+@app.route('/cleanup', methods=['POST'])
+@limiter.exempt
+def cleanup_old_messages():
+    if request.headers.get('X-Cleanup_Token') != os.getenv('CLEANUP_TOKEN'):
+        return jsonify({'error':'unauthorized'}), 401
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    deleted = message.query.filter(message.created_at < cutoff).delete()
+    db.session.commit()
+
+    print(f'[CLEANUP] Deleted {deleted} messages older than 30 days at {datetime.now(timezone.utc)}')
+    return jsonify ({'ok':True, 'deleted':deleted }), 200
 
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
