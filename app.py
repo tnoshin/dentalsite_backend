@@ -220,10 +220,15 @@ def admin_delete_all():
 #delete
 #admin panel block
 
-
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
     return jsonify({'error':'You are sending too many messages at once, please wait a moment.'}), 429
+
+@app.route('/ping', methods=['GET'])
+@limiter.exempt
+def ping():
+    return jsonify({'ok': True})
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
