@@ -210,8 +210,9 @@ def admin_delete_all():
 #standard client block
 @app.route('/cleanup', methods=['POST'])
 @limiter.exempt
+@csrf.exempt
 def cleanup_old_messages():
-    if request.headers.get('X-Cleanup_Token') != os.getenv('CLEANUP_TOKEN'):
+    if request.headers.get('X-Cleanup-Token') != os.getenv('CLEANUP_TOKEN'):
         return jsonify({'error':'unauthorized'}), 401
 
     cutoff = datetime.now(timezone.utc) - timedelta(days=30)
