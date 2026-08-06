@@ -18,8 +18,8 @@ app= Flask(__name__)
 csrf = CSRFProtect(app)
 
 CORS(app, resources={
-    r"/chat": {"origins": ["https://tnoshin.github.io"], "supports_credentials": True},
-    r"/history": {"origins": ["https://tnoshin.github.io"], "supports_credentials": True}
+    r"/chat": {"origins": ["https://tnoshin.github.io", "http://bloom-bakery.local"], "supports_credentials": True},
+    r"/history": {"origins": ["https://tnoshin.github.io", "http://bloom-bakery.local"], "supports_credentials": True}
 })
 
 def get_real_ip():
