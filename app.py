@@ -221,21 +221,7 @@ def admin_delete_all():
 #delete
 #admin panel block
 
-#standard client block
-@app.route('/cleanup', methods=['POST'])
-@limiter.exempt
-@csrf.exempt
-def cleanup_old_messages():
-    if request.headers.get('X-Cleanup-Token') != os.getenv('CLEANUP_TOKEN'):
-        return jsonify({'error':'unauthorized'}), 401
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
-    deleted = message.query.filter(message.created_at < cutoff).delete()
-    db.session.commit()
-
-    print(f'[CLEANUP] Deleted {deleted} messages older than 30 days at {datetime.now(timezone.utc)}')
-    return jsonify ({'ok':True, 'deleted':deleted }), 200
-#standard client block
 
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
