@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
 from google import genai
 from flask_sqlalchemy import SQLAlchemy
+from secrets import compare_digest
 import secrets
 import os
 
@@ -25,7 +26,7 @@ CORS(app, resources={
 def get_real_ip():
     forwarded = request.headers.get('X-Forwarded-For')
     if forwarded:
-        return forwarded.split(',')[0].strip()
+        return forwarded.split(',')[-1].strip()
     return request.remote_addr
 
 limiter = Limiter(
@@ -36,6 +37,8 @@ limiter = Limiter(
 )
 
 app.secret_key = os.getenv('SECRET_KEY')
+if not app.secret_key:
+    raise RuntimeError('SECRET_KEY is not set')
 
 database_url = os.getenv('DATABASE_URL', 'sqlite:///chat.db')
 if database_url.startswith('postgres://'):
@@ -157,7 +160,7 @@ def admin_conversation(session_id):
 def admin_login():
     if request.method == 'POST':
         password = request.form.get('password', '')
-        if password == os.getenv('ADMIN_PASSWORD'):
+        if compare_digest(password, os.getenv('ADMIN_PASSWORD', '')):
             session['is_admin']= True
             return redirect(url_for('admin_chats'))
         else:
