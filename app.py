@@ -40,6 +40,10 @@ app.secret_key = os.getenv('SECRET_KEY')
 if not app.secret_key:
     raise RuntimeError('SECRET_KEY is not set')
 
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD')         
+if not ADMIN_PASSWORD:
+    raise RuntimeError('ADMIN_PASSWORD is not set')
+
 database_url = os.getenv('DATABASE_URL', 'sqlite:///chat.db')
 if database_url.startswith('postgres://'):
     database_url = database_url.replace('postgres://','postgresql://', 1)
@@ -56,6 +60,7 @@ class message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     session_id = db.Column(db.String(50))
     role = db.Column(db.String(10))
+    
     content = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -160,8 +165,8 @@ def admin_conversation(session_id):
 def admin_login():
     if request.method == 'POST':
         password = request.form.get('password', '')
-        if compare_digest(password, os.getenv('ADMIN_PASSWORD', '')):
-            session['is_admin']= True
+        if compare_digest(password.encode('utf-8'), ADMIN_PASSWORD.encode('utf-8')):
+            session['is_admin'] = True
             return redirect(url_for('admin_chats'))
         else:
             return render_template('admin_login.html', error='Incorrect password')
