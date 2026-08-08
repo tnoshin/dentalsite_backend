@@ -85,19 +85,73 @@ Website overview:
 Answer questions about the clinic helpfully and professionally. If asked about something unrelated to dentistry or the clinic, politely redirect. If they ask you to book an appointment, politely refuse and guide them to the booking buttons (name one, e.g. "Book Appointment" in the top-right). If they ask to leave feedback or contact the clinic directly, point them to the Contact page. If a user asks about medical symptoms, pain, or urgent dental issues, do not attempt to diagnose or give medical advice — politely redirect them to contact the clinic directly by phone.
 Never confirm or promise a specific appointment slot; you do not have access to the booking system. Do not disrespect anyone, do not spread hate against any racial group or religion, always be polite with your answers. If user is being rude, give shorter replies.If a user mentions self-harm, suicide, or intent to hurt themselves or others, respond ONLY with: "If you're in crisis, please call 988 (Suicide & Crisis Lifeline) or 911 for immediate help. For dental concerns, call us at (555) 123-4567."""
 
+
+HEALTH_TRIGGER_WORDS= [
+    # Medical emergencies
+    'sick', 'vomit', 'vomiting', 'blood', 'bleeding', 'poison', 'poisoned',
+    'ate', 'swallowed', 'ingested', 'choking',
+    
+    # Medication
+    'medicine', 'medication', 'dose', 'dosage', 'pill', 'antibiotic',
+    'painkiller', 'prescription',
+    
+    # Symptoms
+    'symptom', 'symptoms', 'diarrhea', 'seizure', 'seizures',
+    'breathing', 'breathe', 'panting', 'coughing',
+    
+    # Injury / harm
+    'hurt', 'injured', 'wound', 'limping', 'dying', 'died',
+    'euthanize', 'put down',
+    
+    # Allergic reactions
+    'allergic', 'allergy', 'reaction', 'swollen', 'swelling',
+    
+    # Dangerous foods
+    'chocolate', 'grapes', 'raisins', 'onion', 'garlic', 'xylitol',
+    
+    # Behavior
+    'aggressive', 'biting', 'attack', 'attacking',
+    
+    # Emergency terms
+    'emergency', 'urgent', 'help', 'dying', 'death'
+]
+
+def contains_health_trigger(text):
+    text_lower = text.lower()
+    for word in HEALTH_TRIGGER_WORDS:
+        if word in text_lower:
+            return word
+    return None
+
 @app.route('/chat', methods=['POST'])
 @csrf.exempt
 def chat():
-    print(f'Real IP: {get_real_ip()}')
+    print(f'Real IP: {get_real_ip()}') #try to remove it when not needed
     print(f'X-Forwarded-For header: {request.headers.get("X-Forwarded-For")}')
     if 'session_id' not in session:
         session['session_id']=secrets.token_hex(8)
     session_id = session['session_id']
 
+
+
     data = request.get_json() or {}
     user_message = data.get('message','').strip()
     if not user_message:
         return jsonify({'error':'Please send a message'}), 400
+
+
+    triggered_word = contains_health_trigger(user_message)
+    if triggered_word:
+        print(f'[HEALTH TRIGGER]"{triggered_word}" in session {session_id}:{user_message[:100]}')
+
+        db.session.add(message(session_id=session_id, role='user', content=user_message))
+
+        safety_reply = "One of the words in your message triggered a safety alert. Please visit a vet if facing any issue with your pet."
+
+        db.session.add(message(session_id=session_id, role='assistant', content=safety_reply))
+        db.session.commit()
+
+        return jsonify({'response': safety_reply})
 
     if len(user_message)>1500: #ask the customer how long they'll allow the user's msg to be
         return jsonify({'error':'Message too long(max 1500 characters)'}), 400
