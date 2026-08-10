@@ -297,23 +297,24 @@ def chat():
 
 
     triggered_word = contains_LEGAL_TRIGGER_WORDS(user_message) 
-    triggered_word_es = contains_LEGAL_TRIGGER_WORDS_ES(user_message)
     if triggered_word:
         print(f'[HEALTH TRIGGER]"{triggered_word}" in session {session_id}:{user_message[:100]}')
         db.session.add(message(session_id=session_id, role='user', content=user_message))
-        safety_reply = "Your message contains topics I can't help with — those need [Attorney Name]'s direct review. For questions about your specific case, please contact [Attorney Name] at [phone] or book a free consultation here: [link]. This chat handles general questions about the firm (hours, locations, practice areas, scheduling)."
+        safety_reply = "Your message contains topics I can't help with — those need [Attorney Name]'s direct review. For questions about your specific case, please contact [Attorney Name] at [phone] or book a free consultation here: [link]. This chat handles general questions about the firm (hours, locations, practice areas, scheduling). Our attorney's practice area includes immigration, asylum, achieving green card....{clients field of work}"
         db.session.add(message(session_id=session_id, role='assistant', content=safety_reply))
         db.session.commit()
 
         return jsonify({'response': safety_reply})
+
+    triggered_word_es = contains_LEGAL_TRIGGER_WORDS_ES(user_message)
     if triggered_word_es:
-            print(f'[HEALTH TRIGGER]"{triggered_word}" in session {session_id}:{user_message[:100]}')
+            print(f'[HEALTH TRIGGER ES]"{triggered_word}" in session {session_id}:{user_message[:100]}')
             db.session.add(message(session_id=session_id, role='user', content=user_message))
             safety_reply_es = "Su mensaje contiene un tema legal que requiere la revisión directa de [Attorney Name]. Este chat solo maneja preguntas generales sobre la firma (horarios, ubicaciones, áreas de práctica, y programación de citas). Para preguntas sobre su caso específico, por favor contacte a [Attorney Name] al [phone]."
             db.session.add(message(session_id=session_id, role='assistant', content=safety_reply_es))
             db.session.commit()
 
-            return jsonify({'response': safety_reply})
+            return jsonify({'response': safety_reply_es})
     
 
     if len(user_message)>1500: #ask the customer how long they'll allow the user's msg to be
