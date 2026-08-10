@@ -70,58 +70,216 @@ with app.app_context():
 client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
 
 system_prompt = """ YOU ALWAYS RESPOND WITHIN 300 TOKENS. Try to keep the reply within 3-4 lines unless asked for information, then you can use more lines. You are a helpful assistant for BrightSmile Dental Clinic.
-Clinic information:
-- Name: BrightSmile Dental
+Law-firm information:
+- Name: Attorneysofny
 - Hours: Monday-Friday 8 AM-6 PM, Saturday 9 AM-3 PM, Sunday closed
-- Services: General checkups, teeth cleaning, fillings, whitening, extractions
-- Location: 123 Dental Street, Suite 200, San Francisco, CA 94102
+- Services: Immigration services, help with asylum etc
+- Location: 123 law Street, Suite 200, San Francisco, CA 94102
 - Phone: (555) 123-4567
-- Email: info@brightsmile.com
+- Email: info@attorneysofny.com
 Website overview:
 - Pages: Home, Services, About, Contact, Booking page, and a dark/light mode toggle (sun/moon icon in the navbar).
 - Booking: Users can book an appointment via any of two teal buttons — "Book Appointment" (top-right navbar), "Schedule Visit" (homepage hero), or the white "Book Your Appointment" (in the CTA section above the footer). All three lead to the booking page.
-- Booking page requires: First name, Last name, Date, Time, and Phone number (marked with red asterisks to indicate necessary). Optional fields: Gender, Age, Email, and an Additional Note field for allergies, concerns, or special requests.
-- Contact page: Reached via the "Contact" nav link. Users can send a message or feedback using a form (Full name, Email, Message — all required). This page also shows clinic info, opening hours, and a "What to Expect" section: free initial consultation for first-time patients, gentle pain-free approach, transparent pricing (no hidden fees), and free cancellation up to 24 hours before the appointment.
-Answer questions about the clinic helpfully and professionally. If asked about something unrelated to dentistry or the clinic, politely redirect. If they ask you to book an appointment, politely refuse and guide them to the booking buttons (name one, e.g. "Book Appointment" in the top-right). If they ask to leave feedback or contact the clinic directly, point them to the Contact page. If a user asks about medical symptoms, pain, or urgent dental issues, do not attempt to diagnose or give medical advice — politely redirect them to contact the clinic directly by phone.
-Never confirm or promise a specific appointment slot; you do not have access to the booking system. Do not disrespect anyone, do not spread hate against any racial group or religion, always be polite with your answers. If user is being rude, give shorter replies.If a user mentions self-harm, suicide, or intent to hurt themselves or others, respond ONLY with: "If you're in crisis, please call 988 (Suicide & Crisis Lifeline) or 911 for immediate help. For dental concerns, call us at (555) 123-4567."""
+- Booking page requires: First name, Last name, Date, Time, and Phone number (marked with red asterisks to indicate necessary). Optional fields: Gender, Age, Email, and an Additional Note fieldfor special requests.
+- Contact page: Reached via the "Contact" nav link. Users can send a message or feedback using a form (Full name, Email, Message — all required). 
+Answer questions about the clinic helpfully and professionally. If asked about something unrelated, politely redirect, you WOULD NEVER ANSWER IRRELEVANT QUESTIONS IN ANY OTHER LANGUAGE. If they ask you to book an appointment, politely refuse and guide them to the booking buttons (name one, e.g. "Book Appointment" in the top-right). If they ask to leave feedback or contact the clinic directly, point them to the Contact page. If a user asks about medical symptoms, pain, or urgent dental issues, do not attempt to diagnose or give legal advice — politely redirect them to contact the clinic directly by phone.
+Never confirm or promise a specific appointment slot; you do not have access to the booking system. Do not disrespect anyone, do not spread hate against any racial group or religion, always be polite with your answers. If user is being rude, give shorter replies.If a user mentions self-harm, suicide, or intent to hurt themselves or others, respond ONLY with: "If you're in crisis, please call 988 (Suicide & Crisis Lifeline) or 911 for immediate help. For legal concerns, call us at (555) 123-4567."""
 
 
-HEALTH_TRIGGER_WORDS= [
-    # Medical emergencies
-    'sick', 'vomit', 'vomiting', 'blood', 'bleeding', 'poison', 'poisoned',
-    'ate', 'swallowed', 'ingested', 'choking',
+LEGAL_TRIGGER_WORDS = [
+    # Case-specific legal questions
+    'eligible', 'eligibility', 'qualify', 'qualified', 'qualification',
+    'my case', 'my situation', 'my status', 'my visa', 'my green card',
+    'what should i do', 'should i', 'can i',
     
-    # Medication
-    'medicine', 'medication', 'dose', 'dosage', 'pill', 'antibiotic',
-    'painkiller', 'prescription',
+    # Urgent enforcement situations (highest priority)
+    'deport', 'deportation', 'deported', 'removal', 'removed',
+    'ice', 'detained', 'detention', 'arrested', 'arrest',
+    'raid', 'raided', 'notice to appear', 'nta',
+    'bond', 'custody',
     
-    # Symptoms
-    'symptom', 'symptoms', 'diarrhea', 'seizure', 'seizures',
-    'breathing', 'breathe', 'panting', 'coughing',
+    # Deadlines and timing
+    'deadline', 'expire', 'expired', 'expiring', 'expiration',
+    'when will', 'how long', 'timeline', 'processing time',
+    'priority date', 'pd',
     
-    # Injury / harm
-    'hurt', 'injured', 'wound', 'limping', 'dying', 'died',
-    'euthanize', 'put down',
+    # Case status and outcomes
+    'denied', 'approved', 'rejected', 'pending', 'refused',
+    'appeal', 'appealed', 'reopen', 'motion',
+    'rfe', 'noid', 'request for evidence', 'notice of intent',
+    'chances', 'success rate', 'probability', 'likely',
     
-    # Allergic reactions
-    'allergic', 'allergy', 'reaction', 'swollen', 'swelling',
+    # Specific case types (fine to acknowledge, but not advise on)
+    'asylum', 'refugee', 'withholding', 'cat',
+    'daca', 'tps', 'parole', 'humanitarian',
+    'vawa', 'u visa', 't visa', 'sijs',
+    'cancellation of removal', 'adjustment of status',
+    'consular processing', 'waiver', 'i-601', 'i-212',
     
-    # Dangerous foods
-    'chocolate', 'grapes', 'raisins', 'onion', 'garlic', 'xylitol',
+    # Documents and filings
+    'i-130', 'i-485', 'i-140', 'i-751', 'i-90', 'i-129f',
+    'n-400', 'i-589', 'ead', 'ap', 'advance parole',
+    'labor certification', 'perm', 'prevailing wage',
+    'form', 'petition', 'application', 'filing',
+    'affidavit of support', 'i-864',
     
-    # Behavior
-    'aggressive', 'biting', 'attack', 'attacking',
+    # Immigration status categories
+    'undocumented', 'illegal', 'overstay', 'overstayed',
+    'out of status', 'unlawful presence', 'bar',
+    'inadmissible', 'inadmissibility', 'ineligible',
+    'public charge', 'criminal record',
     
-    # Emergency terms
-    'emergency', 'urgent', 'help', 'dying', 'death'
+    # Family and marriage cases
+    'marriage fraud', 'sham marriage', 'divorce during',
+    'petition for spouse', 'k-1', 'k1', 'fiancé',
+    'stepchild', 'adopted', 'adoption',
+    
+    # Employment cases
+    'h-1b', 'h1b', 'l-1', 'l1', 'o-1', 'o1', 'e-2', 'e2',
+    'green card through work', 'employer sponsor',
+    'change of status', 'change employer',
+    'perm labor', 'i-140',
+    
+    # Court and hearings
+    'court', 'hearing', 'judge', 'immigration court', 'eoir',
+    'trial', 'testimony', 'testify', 'witness',
+    'master calendar', 'individual hearing',
+    'bia', 'board of immigration appeals', 'circuit court',
+    
+    # Government agencies
+    'uscis', 'ins', 'dhs', 'cbp', 'border patrol',
+    'consulate', 'embassy', 'visa interview',
+    'biometrics', 'fingerprint',
+    
+    # Legal advice red flags
+    'legal advice', 'advise me', 'recommend', 'suggestion',
+    'what happens if', 'is it legal', 'is it illegal',
+    'will i get', 'will they', 'can they',
+    
+    # Financial/pricing specifics (should route to attorney, not answer)
+    'how much will my case cost', 'total fees', 'payment plan',
+    'attorney fees', 'retainer',
+    
+    # Sensitive personal circumstances
+    'domestic violence', 'abuse', 'abused', 'trafficking',
+    'persecution', 'persecuted', 'fear', 'afraid',
+    'threatened', 'gang', 'violence',
+    
+    # General urgency signals
+    'urgent', 'emergency', 'immediately', 'right now',
+    'help', 'scared', 'don\'t know what to do'
 ]
 
-def contains_health_trigger(text):
+LEGAL_TRIGGER_WORDS_ES = [
+    # Case-specific questions
+    'mi caso', 'mi situación', 'mi estatus', 'mi visa', 'mi green card',
+    'mi tarjeta verde', 'mi residencia', 'mi ciudadanía',
+    'elegible', 'elegibilidad', 'califico', 'calificar',
+    'puedo aplicar', 'puedo solicitar', 'debo', 'debería',
+    'qué hago', 'qué debo hacer',
+    
+    # Urgent enforcement
+    'deportar', 'deportación', 'deportado', 'deportada',
+    'remoción', 'removido', 'expulsar', 'expulsión',
+    'ice', 'migra', 'detenido', 'detenida', 'detención',
+    'arrestado', 'arrestada', 'arresto', 'redada',
+    'notificación de comparecencia', 'nta',
+    'fianza', 'custodia',
+    
+    # Deadlines and timing
+    'plazo', 'fecha límite', 'vencer', 'vencido', 'vencimiento',
+    'expirar', 'expirado', 'caducar', 'caducado',
+    'cuándo', 'cuánto tiempo', 'tiempo de procesamiento',
+    'fecha de prioridad',
+    
+    # Case status and outcomes
+    'denegado', 'denegada', 'negado', 'negada', 'rechazado', 'rechazada',
+    'aprobado', 'aprobada', 'pendiente',
+    'apelar', 'apelación', 'reabrir', 'moción',
+    'solicitud de evidencia', 'rfe',
+    'probabilidades', 'posibilidades', 'probablemente',
+    
+    # Case types
+    'asilo', 'refugiado', 'refugiada', 'retención de remoción',
+    'daca', 'tps', 'permiso humanitario',
+    'vawa', 'visa u', 'visa t', 'sijs',
+    'cancelación de remoción', 'ajuste de estatus',
+    'proceso consular', 'perdón', 'waiver',
+    
+    # Documents and filings
+    'formulario', 'petición', 'solicitud',
+    'i-130', 'i-485', 'i-140', 'i-751', 'i-90',
+    'n-400', 'i-589', 'ead', 'permiso de trabajo',
+    'certificación laboral', 'perm',
+    'declaración jurada de apoyo', 'i-864',
+    
+    # Immigration status
+    'indocumentado', 'indocumentada', 'ilegal',
+    'sin papeles', 'sin documentos',
+    'sobrepasar', 'sobrepasado', 'fuera de estatus',
+    'presencia ilegal', 'castigo', 'penalidad',
+    'inadmisible', 'inadmisibilidad', 'inelegible',
+    'carga pública', 'antecedentes penales', 'récord criminal',
+    
+    # Family and marriage
+    'matrimonio fraudulento', 'matrimonio falso',
+    'divorcio durante', 'petición para esposo', 'petición para esposa',
+    'k-1', 'prometido', 'prometida', 'fiancé',
+    'hijastro', 'hijastra', 'adoptado', 'adoptada', 'adopción',
+    
+    # Employment
+    'h-1b', 'l-1', 'o-1', 'e-2',
+    'green card por trabajo', 'residencia por trabajo',
+    'patrocinio de empleador', 'sponsor',
+    'cambio de estatus', 'cambio de empleador',
+    
+    # Court and hearings
+    'corte', 'tribunal', 'audiencia', 'juez', 'jueza',
+    'corte de inmigración', 'eoir',
+    'juicio', 'testimonio', 'testificar', 'testigo',
+    'calendario maestro', 'audiencia individual',
+    'bia', 'junta de apelaciones',
+    
+    # Agencies
+    'uscis', 'ins', 'dhs', 'cbp', 'patrulla fronteriza',
+    'consulado', 'embajada', 'entrevista de visa',
+    'biométricos', 'huellas',
+    
+    # Legal advice red flags
+    'consejo legal', 'asesoría legal', 'aconseje', 'recomiende',
+    'qué pasa si', 'es legal', 'es ilegal',
+    
+    # Fees specifics
+    'cuánto costará mi caso', 'honorarios totales', 'plan de pago',
+    'honorarios de abogado', 'retención',
+    
+    # Sensitive personal circumstances
+    'violencia doméstica', 'violencia familiar', 'abuso', 'abusada', 'abusado',
+    'tráfico', 'trata de personas',
+    'persecución', 'perseguido', 'perseguida',
+    'miedo', 'temor', 'amenazado', 'amenazada',
+    'pandilla', 'pandillas', 'violencia',
+    
+    # Urgency signals
+    'urgente', 'emergencia', 'inmediatamente', 'ahora mismo',
+    'ayuda', 'asustado', 'asustada', 'no sé qué hacer'
+]
+
+def contains_LEGAL_TRIGGER_WORDS(text):
     text_lower = text.lower()
-    for word in HEALTH_TRIGGER_WORDS:
+    for word in LEGAL_TRIGGER_WORDS:
         if word in text_lower:
             return word
     return None
+
+def contains_LEGAL_TRIGGER_WORDS_ES(text):
+    text_lower = text.lower()
+    for word in LEGAL_TRIGGER_WORDS_ES:
+        if word in text_lower:
+            return word
+    return None
+
+
 
 @app.route('/chat', methods=['POST'])
 @csrf.exempt
@@ -132,26 +290,31 @@ def chat():
         session['session_id']=secrets.token_hex(8)
     session_id = session['session_id']
 
-
-
     data = request.get_json() or {}
     user_message = data.get('message','').strip()
     if not user_message:
         return jsonify({'error':'Please send a message'}), 400
 
 
-    triggered_word = contains_health_trigger(user_message)
+    triggered_word = contains_LEGAL_TRIGGER_WORDS(user_message) 
+    triggered_word_es = contains_LEGAL_TRIGGER_WORDS_ES(user_message)
     if triggered_word:
         print(f'[HEALTH TRIGGER]"{triggered_word}" in session {session_id}:{user_message[:100]}')
-
         db.session.add(message(session_id=session_id, role='user', content=user_message))
-
-        safety_reply = "One of the words in your message triggered a safety alert. Please visit a vet if facing any issue with your pet."
-
+        safety_reply = "Your message contains topics I can't help with — those need [Attorney Name]'s direct review. For questions about your specific case, please contact [Attorney Name] at [phone] or book a free consultation here: [link]. This chat handles general questions about the firm (hours, locations, practice areas, scheduling)."
         db.session.add(message(session_id=session_id, role='assistant', content=safety_reply))
         db.session.commit()
 
         return jsonify({'response': safety_reply})
+    if triggered_word_es:
+            print(f'[HEALTH TRIGGER]"{triggered_word}" in session {session_id}:{user_message[:100]}')
+            db.session.add(message(session_id=session_id, role='user', content=user_message))
+            safety_reply_es = "Su mensaje contiene un tema legal que requiere la revisión directa de [Attorney Name]. Este chat solo maneja preguntas generales sobre la firma (horarios, ubicaciones, áreas de práctica, y programación de citas). Para preguntas sobre su caso específico, por favor contacte a [Attorney Name] al [phone]."
+            db.session.add(message(session_id=session_id, role='assistant', content=safety_reply_es))
+            db.session.commit()
+
+            return jsonify({'response': safety_reply})
+    
 
     if len(user_message)>1500: #ask the customer how long they'll allow the user's msg to be
         return jsonify({'error':'Message too long(max 1500 characters)'}), 400
