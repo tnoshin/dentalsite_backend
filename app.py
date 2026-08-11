@@ -19,8 +19,8 @@ app= Flask(__name__)
 csrf = CSRFProtect(app)
 
 CORS(app, resources={
-    r"/chat": {"origins": ["https://tnoshin.github.io"], "supports_credentials": True},
-    r"/history": {"origins": ["https://tnoshin.github.io"], "supports_credentials": True}
+    r"/chat": {"origins": ["https://brightsmile-dental-demo.onrender.com/"], "supports_credentials": True},
+    r"/history": {"origins": ["https://brightsmile-dental-demo.onrender.com/"], "supports_credentials": True}
 })
 
 def get_real_ip():
@@ -73,7 +73,7 @@ system_prompt = """ YOU ALWAYS RESPOND WITHIN 300 TOKENS. Try to keep the reply 
 Clinic information:
 - Name: BrightSmile Dental
 - Hours: Monday-Friday 8 AM-6 PM, Saturday 9 AM-3 PM, Sunday closed
-- Services: General checkups, teeth cleaning, fillings, whitening, extractions
+- Services: General checkups, teeth cleaning, fillings, whitening, extraction
 - Location: 123 Dental Street, Suite 200, San Francisco, CA 94102
 - Phone: (555) 123-4567
 - Email: info@brightsmile.com
