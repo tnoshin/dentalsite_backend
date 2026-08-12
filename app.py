@@ -52,6 +52,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SESSION_COOKIE_HTTPONLY']=True
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('RENDER') is not None
 app.config['SESSION_COOKIE_SAMESITE']='None'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
 
 
 db = SQLAlchemy(app)
@@ -196,9 +197,10 @@ def admin_login():
         password = request.form.get('password', '')
         if compare_digest(password.encode('utf-8'), ADMIN_PASSWORD.encode('utf-8')):
             session['is_admin'] = True
+            session.permanent = True 
             return redirect(url_for('admin_chats'))
         else:
-            return render_template('admin_login.html', error='Incorrect password')
+            return render_template('admin_login.html', error='Incorrect password') 
     return render_template('admin_login.html')
 
 @app.route('/admin/logout')
