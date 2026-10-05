@@ -67,7 +67,7 @@ class message(db.Model):
 with app.app_context():
     db.create_all() 
 
-client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
 
 system_prompt = """ YOU ALWAYS RESPOND WITHIN 300 TOKENS. Try to keep the reply within 3-4 lines unless asked for information, then you can use more lines. Communicate with the user in any other language they may use. YOU ARE OBLIGATED TO FOLLOW THESE INSTRUCTIONS BEFORE ANSEWRING ANY QUESTIONS IRRESPECTIVE OF THE LANGUAGE. You are a helpful assistant for BrightSmile Dental Clinic.
 Clinic information:
@@ -128,38 +128,42 @@ def chat():
 
         return jsonify({'response': safety_reply})
 
-    if len(user_message)>1500: #ask the customer how long they'll allow the user's msg to be
-        return jsonify({'error':'Message too long(max 1500 characters)'}), 400
-
-    db.session.add(message(session_id=session_id, role='user', content=user_message))
-    db.session.commit()
-
-    recent_msg = message.query.filter_by(session_id=session_id).order_by(message.id.desc()).limit(10).all()
-    recent_msg.reverse()
-
-    conversation_context = ''
-    for m in recent_msg:
-        if m.role == 'user':
-            conversation_context += f'\nUser: {m.content}'
-        else:
-            conversation_context += f'\nAssistant: {m.content}'
-
-    BUSINESS_TIMEZONE = ZoneInfo('America/Los_Angeles')
-
-    current_time = datetime.now(BUSINESS_TIMEZONE).strftime('%A, %B %d, %Y at %I:%M %p %Z')
-
-    full_msg = system_prompt + f'\n\nCurrent date and time (clinic local time): {current_time}' + '\n\nConversation so far: ' + conversation_context + '\n\nUser: ' + user_message
+    if len(user_message)>2000:
+            return jsonify({'error':'Message too long (max 2000 characters)'}), 400
     
+    
+        db.session.add(message(session_id=session_id, role='user', content=user_message))
+        db.session.commit()
+    
+        history = message.query.filter_by(session_id=session_id).order_by(message.id.desc()).limit(10).all()
+        history = history[::-1] 
+    
+        claude_messages = [
+            {'role':'user' if m.role == 'user' else 'assistant', 'content':m.content}
+            for m in history
+        ]
+    
+        try:
+            response = client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=300,
+            system=system_prompt,
+            messages=claude_messages
+            )
+            if not response.content or not response.content[0].text:
+                return jsonify({'error': 'No response generated, please rephrase.'}), 500
+            reply = response.content[0].text
+        except anthropic.APIConnectionError:
+            return jsonify({'error': 'Cannot reach the AI service. Please try again.'}), 503
+        except anthropic.RateLimitError:
+            return jsonify({'error': 'Too many requests. Please wait a moment.'}), 429
+        except anthropic.APIStatusError as e:
+            print(f"Anthropic API error: {e.status_code} - {e.message}")
+            return jsonify({'error': 'AI service error. Please try again.'}), 503
+        except Exception as e:
+            print(f"Unexpected error in chat: {e}")
+            return jsonify({'error': 'Something went wrong. Please try again.'}), 500
 
-
-    try:
-        response = client.models.generate_content(model= 'gemini-3.1-flash-lite', contents= full_msg )
-        if not response.text:
-            return jsonify({'error': 'No response generated, please rephrase'}), 500
-        reply = response.text
-    except Exception as error:
-        print(f'Gemini API error: {error}')
-        return jsonify({'error':'Something went wrong. Please try again.'}), 500
 
     db.session.add(message(session_id=session_id, role='assistant', content=reply))
     db.session.commit()
@@ -258,21 +262,7 @@ def admin_delete_all():
 #delete
 #admin panel block
 
-#standard client block
-@app.route('/cleanup', methods=['POST'])
-@limiter.exempt
-@csrf.exempt
-def cleanup_old_messages():
-    if request.headers.get('X-Cleanup-Token') != os.getenv('CLEANUP_TOKEN'):
-        return jsonify({'error':'unauthorized'}), 401
 
-    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
-    deleted = message.query.filter(message.created_at < cutoff).delete()
-    db.session.commit()
-
-    print(f'[CLEANUP] Deleted {deleted} messages older than 30 days at {datetime.now(timezone.utc)}')
-    return jsonify ({'ok':True, 'deleted':deleted }), 200
-#standard client block
 
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
