@@ -132,9 +132,6 @@ def chat():
             return jsonify({'error':'Message too long (max 2000 characters)'}), 400
     
     
-        db.session.add(message(session_id=session_id, role='user', content=user_message))
-        db.session.commit()
-    
         history = message.query.filter_by(session_id=session_id).order_by(message.id.desc()).limit(10).all()
         history = history[::-1] 
     
@@ -238,6 +235,8 @@ def admin_chats():
             'last_time':last_time
         })
     return render_template('admin_chats.html', sessions=sessions_list)
+
+
 #delete option
 @app.route('/admin/delete/<session_id>', methods=['POST'])
 def admin_delete_conversation(session_id):
