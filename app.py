@@ -6,7 +6,7 @@ from flask_limiter.util import get_remote_address
 from datetime import datetime, timezone, timedelta
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
-from google import genai
+import anthropic
 from flask_sqlalchemy import SQLAlchemy
 from secrets import compare_digest
 import secrets
