@@ -87,16 +87,6 @@ Answer questions about the clinic helpfully and professionally. If asked about s
 Never confirm or promise a specific appointment slot; you do not have access to the booking system. Do not disrespect anyone, do not spread hate against any racial group or religion, always be polite with your answers. If user is being rude, give shorter replies.If a user mentions self-harm, suicide, or intent to hurt themselves or others, respond ONLY with: "If you're in crisis, please call 988 (Suicide & Crisis Lifeline) or 911 for immediate help. For dental concerns, call us at (555) 123-4567."""
 
 
-HEALTH_TRIGGER_WORDS= [
-    'toothache','dying','medicine','swelling','hurting', 'fever', 'bleeding','unbearable'
-]
-
-def contains_health_trigger(text):
-    text_lower = text.lower()
-    for word in HEALTH_TRIGGER_WORDS:
-        if word in text_lower:
-            return word
-    return None
 
 @app.route('/chat', methods=['POST'])
 @csrf.exempt
@@ -115,19 +105,10 @@ def chat():
         return jsonify({'error':'Please send a message'}), 400
 
 
-    triggered_word = contains_health_trigger(user_message)
-    if triggered_word:
-        print(f'[HEALTH TRIGGER]"{triggered_word}" in session {session_id}:{user_message[:100]}')
-
-        db.session.add(message(session_id=session_id, role='user', content=user_message))
-
-        safety_reply = "A specific word in your message triggered our safety alert. Please contact the dentist personally at the clinic if facing any health issue."
-        return jsonify({'response': safety_reply})
-
     if len(user_message)>2000:
             return jsonify({'error':'Message too long (max 2000 characters)'}), 400
 
-    db.session.add(message(session_id=session_id, role='assistant', content=safety_reply))
+    db.session.add(message(session_id=session_id, role='user', content=user_message)) 
     db.session.commit()
     
     history = message.query.filter_by(session_id=session_id).order_by(message.id.desc()).limit(10).all()
@@ -137,6 +118,9 @@ def chat():
         {'role':'user' if m.role == 'user' else 'assistant', 'content':m.content}
         for m in history
     ]
+
+    while claude_messages and claude_messages[0]['role']=='assistant':
+        claude_messages.pop(0)
     
     try:
         response = client.messages.create(
