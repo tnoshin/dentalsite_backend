@@ -91,8 +91,6 @@ Never confirm or promise a specific appointment slot; you do not have access to 
 @app.route('/chat', methods=['POST'])
 @csrf.exempt
 def chat():
-    print(f'Real IP: {get_real_ip()}') #try to remove it when not needed
-    print(f'X-Forwarded-For header: {request.headers.get("X-Forwarded-For")}')
     if 'session_id' not in session:
         session['session_id']=secrets.token_hex(8)
     session_id = session['session_id']
