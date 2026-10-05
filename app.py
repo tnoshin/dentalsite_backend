@@ -122,44 +122,42 @@ def chat():
         db.session.add(message(session_id=session_id, role='user', content=user_message))
 
         safety_reply = "A specific word in your message triggered our safety alert. Please contact the dentist personally at the clinic if facing any health issue."
-
-        db.session.add(message(session_id=session_id, role='assistant', content=safety_reply))
-        db.session.commit()
-
         return jsonify({'response': safety_reply})
 
     if len(user_message)>2000:
             return jsonify({'error':'Message too long (max 2000 characters)'}), 400
+
+    db.session.add(message(session_id=session_id, role='assistant', content=safety_reply))
+    db.session.commit()
     
+    history = message.query.filter_by(session_id=session_id).order_by(message.id.desc()).limit(10).all()
+    history = history[::-1] 
     
-        history = message.query.filter_by(session_id=session_id).order_by(message.id.desc()).limit(10).all()
-        history = history[::-1] 
+    claude_messages = [
+        {'role':'user' if m.role == 'user' else 'assistant', 'content':m.content}
+        for m in history
+    ]
     
-        claude_messages = [
-            {'role':'user' if m.role == 'user' else 'assistant', 'content':m.content}
-            for m in history
-        ]
-    
-        try:
-            response = client.messages.create(
-            model='claude-haiku-4-5-20251001',
-            max_tokens=300,
-            system=system_prompt,
-            messages=claude_messages
-            )
-            if not response.content or not response.content[0].text:
-                return jsonify({'error': 'No response generated, please rephrase.'}), 500
-            reply = response.content[0].text
-        except anthropic.APIConnectionError:
-            return jsonify({'error': 'Cannot reach the AI service. Please try again.'}), 503
-        except anthropic.RateLimitError:
-            return jsonify({'error': 'Too many requests. Please wait a moment.'}), 429
-        except anthropic.APIStatusError as e:
-            print(f"Anthropic API error: {e.status_code} - {e.message}")
-            return jsonify({'error': 'AI service error. Please try again.'}), 503
-        except Exception as e:
-            print(f"Unexpected error in chat: {e}")
-            return jsonify({'error': 'Something went wrong. Please try again.'}), 500
+    try:
+        response = client.messages.create(
+        model='claude-haiku-4-5-20251001',
+        max_tokens=300,
+        system=system_prompt,
+        messages=claude_messages
+        )
+        if not response.content or not response.content[0].text:
+            return jsonify({'error': 'No response generated, please rephrase.'}), 500
+        reply = response.content[0].text
+    except anthropic.APIConnectionError:
+        return jsonify({'error': 'Cannot reach the AI service. Please try again.'}), 503
+    except anthropic.RateLimitError:
+        return jsonify({'error': 'Too many requests. Please wait a moment.'}), 429
+    except anthropic.APIStatusError as e:
+        print(f"Anthropic API error: {e.status_code} - {e.message}")
+        return jsonify({'error': 'AI service error. Please try again.'}), 503
+    except Exception as e:
+        print(f"Unexpected error in chat: {e}")
+        return jsonify({'error': 'Something went wrong. Please try again.'}), 500
 
 
     db.session.add(message(session_id=session_id, role='assistant', content=reply))
