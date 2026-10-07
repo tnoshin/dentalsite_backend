@@ -91,6 +91,7 @@ Never confirm or promise a specific appointment slot; you do not have access to 
 @app.route('/chat', methods=['POST'])
 @csrf.exempt
 def chat():
+
     if 'session_id' not in session:
         session['session_id']=secrets.token_hex(8)
     session_id = session['session_id']
@@ -119,14 +120,18 @@ def chat():
 
     while claude_messages and claude_messages[0]['role']=='assistant':
         claude_messages.pop(0)
-    
+        
+    BUSINESS_TIMEZONE = ZoneInfo('America/Los_Angeles')
+    current_time = datetime.now(BUSINESS_TIMEZONE).strftime('%A, %B %d, %Y at %I:%M %p %Z')
+
     try:
         response = client.messages.create(
-        model='claude-haiku-4-5-20251001',
-        max_tokens=300,
-        system=system_prompt,
-        messages=claude_messages
+            model='claude-haiku-4-5-20251001',
+            max_tokens=500,
+            system=system_prompt + f'\n\nCurrent date and time (clinic local time): {current_time}',
+            messages=claude_messages
         )
+        
         if not response.content or not response.content[0].text:
             return jsonify({'error': 'No response generated, please rephrase.'}), 500
         reply = response.content[0].text
@@ -246,12 +251,6 @@ def admin_delete_all():
 @app.errorhandler(429)
 def rate_limit_exceeded(e):
     return jsonify({'error':'You are sending too many messages at once, please wait a moment.'}), 429
-
-@app.route('/ping', methods=['GET'])
-@limiter.exempt
-def ping():
-    return jsonify({'ok': True})
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
